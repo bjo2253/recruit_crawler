@@ -77,7 +77,7 @@ class SaraminCrawler:
             json_data = response.json()
 
             # 전체 공고 수 계산
-            total_count = int(json_data.get('count', '0').replace(',', ''))
+            total_count = int(str(json_data.get('count', '0')).replace(',', ''))
 
             # 공고가 많으면 5페이지만 크롤링 
             max_pages = min((total_count + 39) // 40, 5)
