@@ -462,6 +462,17 @@ class SaraminCrawler:
                 'max_pages': None,   # 전체 페이지 크롤링
                 'must_contain': '환경안전',   # 제목이나 본문에 '환경안전'이 실제로 있는 공고만
             },
+            {
+                'name': '화장품 정규직 (3000만원 이상, 주5일)',
+                'keyword': '화장품',
+                'salary_min': '3000만원~',
+                'company_types': ['대기업', '중견기업', '중소기업'],
+                'job_types': ['정규직'],
+                'work_days': ['주5일'],
+                'exclude_keywords': ['영업', '칭량', 'MD'],
+                'max_pages': None,   # 전체 페이지 크롤링
+                'must_contain': '화장품',   # 제목이나 본문에 '화장품'이 실제로 있는 공고만
+            },
         ]
 
         all_jobs = []
