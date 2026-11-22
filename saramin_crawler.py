@@ -412,26 +412,15 @@ class SaraminCrawler:
         # 다양한 검색 조건들
         search_configs = [
             {
-                'name': '병원 데이터 고연봉 정규직',
-                'keyword': '병원 데이터',
+                'name': '환경안전 정규직 (3000만원 이상, 주5일)',
+                'keyword': '환경안전',
                 'salary_min': '3000만원~',
-                'company_types': ['대기업', '중견기업'],
+                'company_types': ['대기업', '중견기업', '중소기업'],
                 'job_types': ['정규직'],
+                'work_days': ['주5일'],
+                'exclude_keywords': ['영업', '측정', '폐수', '미화'],
+                'max_pages': None,   # 전체 페이지 크롤링
             },
-            {
-                'name': '스타트업 PM 재택근무',
-                'keyword': 'PM',
-                'company_types': ['스타트업'],
-                'job_types': ['정규직', '계약직'],
-                'remote_work': True,
-                'work_day': ['유연근무제']
-            },
-            {
-                'name': '헬스케어 기획직',
-                'keyword': '헬스케어',
-                'job_types': ['정규직'],
-                'exclude_keywords': ['학교'],
-            }
         ]
 
         all_jobs = []
