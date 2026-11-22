@@ -262,11 +262,9 @@ class SaraminCrawler:
             return
         
         if not filename:
-            # 아무런 경로가 없으면 현재 이 python 파일이 있는 곳에 저장됩니다.
-            filename = f"사람인_공고_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"   
-
-            # 원하는 경로와 파일명 지정 가능합니다.
-            # filename = f"./output/사람인_공고_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            # 기본 저장 위치: results/ 폴더 (GitHub Actions가 이 폴더의 CSV를 저장소에 커밋합니다)
+            os.makedirs('results', exist_ok=True)
+            filename = os.path.join('results', f"사람인_공고_{datetime.now().strftime('%Y%m%d')}.csv")
 
         df = pd.DataFrame(jobs)
         df.to_csv(filename, index=False, encoding='utf-8-sig')
