@@ -41,10 +41,12 @@ class SaraminCrawler:
             '유연근무제': 'wsh050', '면접후결정': 'wsh090'
         }
 
-    def search_jobs(self, keyword=None, max_pages=5, **filters):
+    def search_jobs(self, keyword=None, max_pages=5, must_contain=None, **filters):
         """실제 api 엔드포인트 사용한 검색
 
         max_pages: 최대 크롤링 페이지 수 (페이지당 40개). None이면 전체 페이지를 크롤링합니다.
+        must_contain: 이 단어가 공고 제목이나 본문에 실제로 들어간 공고만 남깁니다 (띄어쓰기 무시).
+                      예: must_contain="환경안전"
         """
 
         jobs = []
@@ -129,7 +131,47 @@ class SaraminCrawler:
             return []
         
         print(f"✅ '{keyword or '전체'}' 총 {len(jobs)}개 공고 수집 완료!")
+
+        if must_contain:
+            jobs = self.filter_by_text(jobs, must_contain)
+
         return jobs
+
+    def _get_detail_text(self, rec_idx):
+        """공고 상세 페이지(본문)의 텍스트를 가져옴"""
+        detail_url = "https://www.saramin.co.kr/zf_user/jobs/relay/view-detail"
+        params = {'rec_idx': rec_idx, 'rec_seq': 0, 't_category': 'relay_view', 't_content': 'view_detail'}
+        response = requests.get(detail_url, params=params, headers=self.headers, timeout=20)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'html.parser')
+        return soup.get_text(' ', strip=True)
+
+    def filter_by_text(self, jobs, word):
+        """제목 또는 본문에 word가 실제로 들어간 공고만 남김 (띄어쓰기 무시)"""
+        target = word.replace(' ', '')
+        print(f"🔎 제목·본문에 '{word}'가 들어간 공고만 거르는 중... ({len(jobs)}개 확인)")
+
+        matched = []
+        for i, job in enumerate(jobs, 1):
+            if target in str(job.get('title', '')).replace(' ', ''):
+                job['matched_in'] = '제목'
+                matched.append(job)
+                continue
+
+            try:
+                body = self._get_detail_text(job['rec_idx'])
+                if target in body.replace(' ', ''):
+                    job['matched_in'] = '본문'
+                    matched.append(job)
+                time.sleep(1)  # 서버 부하 방지
+            except Exception as e:
+                print(f"⚠️ 본문 확인 실패 ({job.get('rec_idx')}): {e}")
+
+            if i % 50 == 0:
+                print(f"   └─ {i}/{len(jobs)}개 확인, {len(matched)}개 해당")
+
+        print(f"✅ '{word}' 포함 공고 {len(matched)}개 (전체 {len(jobs)}개 중)")
+        return matched
     
     def _apply_filters(self, params, filters):
         """필터들을 파라미터에 적용"""
@@ -418,6 +460,7 @@ class SaraminCrawler:
                 'work_days': ['주5일'],
                 'exclude_keywords': ['영업', '측정', '폐수', '미화'],
                 'max_pages': None,   # 전체 페이지 크롤링
+                'must_contain': '환경안전',   # 제목이나 본문에 '환경안전'이 실제로 있는 공고만
             },
         ]
 
