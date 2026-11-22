@@ -311,6 +311,48 @@ class SaraminCrawler:
         df = pd.DataFrame(jobs)
         df.to_csv(filename, index=False, encoding='utf-8-sig')
         print(f"{len(jobs)}개 공고를 {filename}에 저장하였습니다.")
+
+        # 링크를 클릭할 수 있는 엑셀 파일도 함께 저장 (CSV는 하이퍼링크를 담을 수 없음)
+        try:
+            excel_filename = os.path.splitext(filename)[0] + '.xlsx'
+            self.save_to_excel(df, excel_filename)
+        except Exception as e:
+            print(f"⚠️ 엑셀 저장 실패: {e}")
+
+        return filename
+
+    def save_to_excel(self, df, filename):
+        """공고 제목·링크를 클릭하면 사람인 공고로 이동하는 엑셀 파일 저장"""
+        from openpyxl.styles import Font
+        from openpyxl.utils import get_column_letter
+
+        with pd.ExcelWriter(filename, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='채용공고')
+            ws = writer.sheets['채용공고']
+            columns = list(df.columns)
+            link_font = Font(color='0563C1', underline='single')
+
+            if 'link' in columns:
+                link_col = columns.index('link') + 1
+                title_col = columns.index('title') + 1 if 'title' in columns else None
+                for row in range(2, ws.max_row + 1):
+                    url = ws.cell(row=row, column=link_col).value
+                    if not url:
+                        continue
+                    for col in (link_col, title_col):
+                        if col:
+                            cell = ws.cell(row=row, column=col)
+                            cell.hyperlink = url
+                            cell.font = link_font
+
+            # 열 너비, 첫 줄 고정, 필터
+            widths = {'title': 60, 'company': 25, 'location': 18, 'link': 45}
+            for i, name in enumerate(columns, 1):
+                ws.column_dimensions[get_column_letter(i)].width = widths.get(name, 14)
+            ws.freeze_panes = 'A2'
+            ws.auto_filter.ref = ws.dimensions
+
+        print(f"🔗 링크 클릭 가능한 엑셀 파일 저장: {filename}")
         return filename
     
     def send_email_notification(self, jobs, email_config):
