@@ -41,8 +41,11 @@ class SaraminCrawler:
             '유연근무제': 'wsh050', '면접후결정': 'wsh090'
         }
 
-    def search_jobs(self, keyword=None, **filters):
-        """실제 api 엔드포인트 사용한 검색"""
+    def search_jobs(self, keyword=None, max_pages=5, **filters):
+        """실제 api 엔드포인트 사용한 검색
+
+        max_pages: 최대 크롤링 페이지 수 (페이지당 40개). None이면 전체 페이지를 크롤링합니다.
+        """
 
         jobs = []
 
@@ -79,8 +82,9 @@ class SaraminCrawler:
             # 전체 공고 수 계산
             total_count = int(str(json_data.get('count', '0')).replace(',', ''))
 
-            # 공고가 많으면 5페이지만 크롤링 
-            max_pages = min((total_count + 39) // 40, 5)
+            # 전체 페이지 수 계산 후 max_pages 제한 적용 (None이면 전체)
+            total_pages = (total_count + 39) // 40
+            max_pages = total_pages if max_pages is None else min(total_pages, max_pages)
 
             print(f"총 {total_count:,}개 공고 발견! {max_pages}페이지 크롤링 예정")
 
