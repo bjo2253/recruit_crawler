@@ -371,7 +371,8 @@ class SaraminCrawler:
                                 filename=f"채용공고_{datetime.now().strftime('%Y%m%d')}.csv")
                     msg.attach(part)
 
-            server = smtplib.SMTP('smtp.gmail.com', 587)
+            smtp_host, smtp_port = self._get_smtp_server(email_config['sender_email'])
+            server = smtplib.SMTP(smtp_host, smtp_port)
             server.starttls()
             server.login(email_config['sender_email'], email_config['app_password'])
             server.send_message(msg)
@@ -381,6 +382,18 @@ class SaraminCrawler:
             
         except Exception as e:
             print(f"❌ 이메일 전송 실패: {e}")
+
+    def _get_smtp_server(self, sender_email):
+        """발신 주소 도메인에 맞는 SMTP 서버 선택 (SMTP_HOST / SMTP_PORT 환경변수로 직접 지정 가능)"""
+        smtp_servers = {
+            'gmail.com': ('smtp.gmail.com', 587),
+            'naver.com': ('smtp.naver.com', 587),
+        }
+        domain = sender_email.split('@')[-1].lower()
+        host, port = smtp_servers.get(domain, ('smtp.gmail.com', 587))
+        host = os.environ.get('SMTP_HOST') or host
+        port = int(os.environ.get('SMTP_PORT') or port)
+        return host, port
 
     def _get_keyword_stats(self, jobs):
         """키워드별 통계 생성"""
@@ -449,7 +462,10 @@ class SaraminCrawler:
         # filename = self.save_to_csv(unique_jobs)
         
         # 이메일 알림
-        if email_config and unique_jobs:
+        if email_config and not all(email_config.values()):
+            print("📭 이메일 설정(EMAIL_SENDER, EMAIL_RECEIVER, EMAIL_APP_PASSWORD)이 없어 이메일 전송을 건너뜁니다.")
+            self.save_to_csv(unique_jobs)
+        elif email_config and unique_jobs:
             self.send_email_notification(unique_jobs, email_config)
         
         return unique_jobs
